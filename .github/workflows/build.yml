@@ -1,1 +1,30 @@
-
+name: Build Android TV APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project if zipped
+        run: |
+          for z in *.zip; do
+            if [ -f "$z" ]; then unzip -q -o "$z" -d project_unzipped; fi
+          done
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        run: |
+          S=$(find . \( -name settings.gradle.kts -o -name settings.gradle \) | head -n1)
+          echo "Project found at: $S"
+          gradle -p "$(dirname "$S")" assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TahrimTV-APK
+          path: '**/build/outputs/apk/debug/*.apk'
